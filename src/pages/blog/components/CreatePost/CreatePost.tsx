@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Fragment } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Post } from '../../../../@types/blog.type'
-import { addPost, cancelEditingPost } from '../../blog.reducer'
+import { addPost, cancelEditingPost, finishEditingPost } from '../../blog.reducer'
 import { RootState } from '../../../../store'
 
 const initialState: Post = {
@@ -26,9 +26,15 @@ export default function CreatePost() {
     //handle
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        const formDataWithId = { ...formData, id: new Date().toISOString() }
-        dispatch(addPost(formDataWithId))
-        console.log({ formDataWithId })
+
+        // edit post
+        if (editingPost) {
+            dispatch(finishEditingPost(formData))
+        } else {
+            // create post
+            const formDataWithId = { ...formData, id: new Date().toISOString() }
+            dispatch(addPost(formDataWithId))
+        }
         setFormData(initialState)
     }
 
