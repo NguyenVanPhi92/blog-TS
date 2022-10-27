@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, Fragment } from 'react'
 import { useSelector } from 'react-redux'
 import { Post } from '../../../../@types/blog.type'
 import { RootState, useAppDispatch } from '../../../../store'
 import { getPostList, startEditingPost, deletePost } from '../../blog.slice'
 import PostItem from '../PostItem/index'
+import SkeletonPost from '../Skeleton/SkeletonPost'
 
 // GỌI API trong useEffect()
 // Nếu gọi thành công thì dispatch action type: "blog/getPostListSuccess"
@@ -11,6 +12,7 @@ import PostItem from '../PostItem/index'
 
 export default function PostList() {
     const postList = useSelector((state: RootState) => state.blog.postList)
+    const loading = useSelector((state: RootState) => state.blog.loading)
     const dispatch = useAppDispatch()
 
     useEffect(() => {
@@ -29,8 +31,6 @@ export default function PostList() {
         dispatch(startEditingPost(postId))
     }
 
-    console.log({ postList })
-
     return (
         <div className='bg-white py-6 sm:py-8 lg:py-12'>
             <div className='mx-auto max-w-screen-xl px-4 md:px-8'>
@@ -43,14 +43,23 @@ export default function PostList() {
                     </p>
                 </div>
                 <div className='grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-2 xl:grid-cols-2 xl:gap-8'>
-                    {postList.map((post: Post) => (
-                        <PostItem
-                            post={post}
-                            key={post.id}
-                            handleDelete={handleDelete}
-                            startEditingPost={handleStartEditing}
-                        />
-                    ))}
+                    {loading && (
+                        <Fragment>
+                            <SkeletonPost />
+                            <SkeletonPost />
+                            <SkeletonPost />
+                            <SkeletonPost />
+                        </Fragment>
+                    )}
+                    {!loading &&
+                        postList.map((post: Post) => (
+                            <PostItem
+                                post={post}
+                                key={post.id}
+                                handleDelete={handleDelete}
+                                startEditingPost={handleStartEditing}
+                            />
+                        ))}
                 </div>
             </div>
         </div>

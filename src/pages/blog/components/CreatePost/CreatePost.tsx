@@ -17,6 +17,7 @@ export default function CreatePost() {
     const dispatch = useAppDispatch()
     const [formData, setFormData] = useState<Post>(initialState)
     const editingPost = useSelector((state: RootState) => state.blog.editingPost)
+    const loading = useSelector((state: RootState) => state.blog.loading)
 
     // nếu có editing post thì lấy ra editing post còn không thì dùng initialState => đưa vào formData
     useEffect(() => {
@@ -34,7 +35,16 @@ export default function CreatePost() {
                     postId: editingPost.id,
                     body: formData
                 })
+                // thông thường dispatch asyncThunk thì nó sẽ đóng gói
+                // unwrap -> mở gói
             )
+                .unwrap()
+                .then(res => {
+                    console.log(res)
+                })
+                .catch(error => {
+                    console.log(error)
+                })
         } else {
             // create post
             dispatch(addPost(formData))

@@ -1,16 +1,26 @@
-import { createAsyncThunk, createSlice, current, PayloadAction } from '@reduxjs/toolkit'
+import { AsyncThunk, createAsyncThunk, createSlice, current, PayloadAction } from '@reduxjs/toolkit'
 import http from 'utils/http'
 import { Post } from '../../@types/blog.type'
+
+type GenericAsyncThunk = AsyncThunk<unknown, unknown, any>
+
+type PendingAction = ReturnType<GenericAsyncThunk['pending']>
+type RejectedAction = ReturnType<GenericAsyncThunk['rejected']>
+type FulfilledAction = ReturnType<GenericAsyncThunk['fulfilled']>
 
 interface BlogState {
     postList: Post[]
     editingPost: Post | null
+    loading: boolean
+    currentRequestId: undefined | string
 }
 
 // tạo store state cho Blog
 const initialState: BlogState = {
     postList: [],
-    editingPost: null
+    editingPost: null,
+    loading: false,
+    currentRequestId: undefined
 }
 
 // tạo các action
@@ -90,17 +100,39 @@ const blogSlice = createSlice({
                     state.postList.splice(deletePostIndex, 1)
                 }
             })
-            .addMatcher(
+            .addMatcher<PendingAction>(
                 // sự kiện nào có cancel thì log state ra
-                action => action.type.includes('cancel'),
+                action => action.type.endsWith('/pending'),
                 (state, action) => {
-                    console.log(current(state))
+                    state.loading = true
+                    state.currentRequestId = action.meta.requestId // requestId khi gọi createAsyncThunk thì nó sinh ra 1 ID unique
                 }
             )
-            // trường hợp không nhảy vào các action ở trên thì nhảy vào default case
-            .addDefaultCase((state, action) => {
-                console.log('action type: ', action.type, current(state))
-            })
+            .addMatcher<RejectedAction>(
+                // sự kiện nào có cancel thì log state ra
+                action => action.type.endsWith('/rejected'),
+                (state, action) => {
+                    if (state.loading && state.currentRequestId === action.meta.requestId) {
+                        state.loading = false
+                        state.currentRequestId = undefined
+                    }
+                }
+            )
+            .addMatcher<FulfilledAction>(
+                // sự kiện nào có cancel thì log state ra
+                action => action.type.endsWith('/fulfilled'),
+                (state, action) => {
+                    if (state.loading && state.currentRequestId === action.meta.requestId) {
+                        state.loading = false
+                        state.currentRequestId = undefined
+                    }
+                    state.loading = false
+                }
+            )
+        // trường hợp không nhảy vào các action ở trên thì nhảy vào default case
+        // .addDefaultCase((state, action) => {
+        //     console.log('action type: ', action.type, current(state))
+        // })
     }
 })
 

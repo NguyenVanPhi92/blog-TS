@@ -17,5 +17,5 @@
         "jsx": "react-jsx",
         "baseUrl": "./src" // complier sẽ tính gốc bắt đầu từ src
     },
-    "include": ["src"]
+    "include": ["src", "server/server.js"]
 }
