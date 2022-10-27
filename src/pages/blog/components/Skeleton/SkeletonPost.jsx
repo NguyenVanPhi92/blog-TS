@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function SkeletonPost() {
     return (
         <div role='status' className='animate-pulse space-y-8 md:flex md:items-center md:space-y-0 md:space-x-8'>

@@ -4,7 +4,7 @@ import { Post } from '../../../../@types/blog.type'
 import { RootState, useAppDispatch } from '../../../../store'
 import { getPostList, startEditingPost, deletePost } from '../../blog.slice'
 import PostItem from '../PostItem/index'
-import SkeletonPost from '../Skeleton/SkeletonPost'
+import SkeletonPost from '../Skeleton/Skeleton'
 
 // GỌI API trong useEffect()
 // Nếu gọi thành công thì dispatch action type: "blog/getPostListSuccess"
@@ -44,12 +44,12 @@ export default function PostList() {
                 </div>
                 <div className='grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-2 xl:grid-cols-2 xl:gap-8'>
                     {loading && (
-                        <Fragment>
+                        <>
                             <SkeletonPost />
                             <SkeletonPost />
                             <SkeletonPost />
                             <SkeletonPost />
-                        </Fragment>
+                        </>
                     )}
                     {!loading &&
                         postList.map((post: Post) => (

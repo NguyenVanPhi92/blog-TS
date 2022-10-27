@@ -52,9 +52,17 @@ export default function CreatePost() {
                     setErrorForm(error.error)
                 })
         } else {
-            // create post, khi dùng với asyncThunk thì phài dùng kèm unwrap or unwrapResult
-            await dispatch(addPost(formData)).unwrap() // dùng unwrap -> để trả về response data
-            // const result = unwrapResult(res) //dùng unwrapResult để tra về response data
+            try {
+                // create post, khi dùng với asyncThunk thì phài dùng kèm unwrap or unwrapResult
+                const res = await dispatch(addPost(formData)) // dùng unwrap -> để trả về response data
+                unwrapResult(res) //dùng unwrapResult để tra về response data
+                setFormData(initialState)
+                if (errorForm) setErrorForm(null)
+            } catch (error: any) {
+                console.log(error.error)
+
+                setErrorForm(error.error)
+            }
         }
     }
 

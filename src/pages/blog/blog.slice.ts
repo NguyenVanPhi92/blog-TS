@@ -3,7 +3,6 @@ import http from 'utils/http'
 import { Post } from '../../@types/blog.type'
 
 type GenericAsyncThunk = AsyncThunk<unknown, unknown, any>
-
 type PendingAction = ReturnType<GenericAsyncThunk['pending']>
 type RejectedAction = ReturnType<GenericAsyncThunk['rejected']>
 type FulfilledAction = ReturnType<GenericAsyncThunk['fulfilled']>
@@ -15,7 +14,7 @@ interface BlogState {
     currentRequestId: undefined | string
 }
 
-// tạo store state cho Blog
+// tạo state cho Blog
 const initialState: BlogState = {
     postList: [],
     editingPost: null,
@@ -33,11 +32,20 @@ export const getPostList = createAsyncThunk('blog/getPostList', async (_, thunkA
     return response.data
 })
 export const addPost = createAsyncThunk('blog/addPost', async (body: Omit<Post, 'id'>, thunkApi) => {
-    const response = await http.post<Post>('posts', body, {
-        signal: thunkApi.signal // loại bỏ 2 lần call api của trick mode => chỉ còn 1 lần call api
-    })
+    try {
+        const response = await http.post<Post>('posts', body, {
+            signal: thunkApi.signal // loại bỏ 2 lần call api của trick mode => chỉ còn 1 lần call api
+        })
 
-    return response.data
+        return response.data
+    } catch (error: any) {
+        // handle error
+        if (error.name === 'AxiosError' && error.response.status === 422) {
+            return thunkApi.rejectWithValue(error.response.data)
+        }
+
+        throw error
+    }
 })
 export const updatePost = createAsyncThunk(
     'blog/updatePost',
@@ -66,10 +74,11 @@ export const deletePost = createAsyncThunk('blog/deletePost', async (postId: str
     return response.data
 })
 
+// tạo slice chứa reducer và dispatch action
 const blogSlice = createSlice({
     name: 'blog',
     initialState,
-    // map object
+    // reducers -> map object
     // reducers chỉ sử lý action đồng bộ
     reducers: {
         startEditingPost: (state, action: PayloadAction<string>) => {
@@ -82,7 +91,8 @@ const blogSlice = createSlice({
             state.editingPost = null
         }
     },
-    // builder callback sử lý action không đồng bộ => chuyên dùng cho TS
+    // extraReducers -> builder callback
+    // xử lý action không đồng bộ => chuyên dùng cho TS
     extraReducers(builder) {
         builder
             .addCase(getPostList.fulfilled, (state, action) => {
@@ -109,16 +119,16 @@ const blogSlice = createSlice({
                     state.postList.splice(deletePostIndex, 1)
                 }
             })
+            // addMatcher -> thực hiện khi chứa các key string trong action
+            // addMatcher -> dùng cho event loading cho toàn app
             .addMatcher<PendingAction>(
-                // sự kiện nào có cancel thì log state ra
                 action => action.type.endsWith('/pending'),
                 (state, action) => {
                     state.loading = true
-                    state.currentRequestId = action.meta.requestId // requestId khi gọi createAsyncThunk thì nó sinh ra 1 ID unique
+                    state.currentRequestId = action.meta.requestId // requestId -> khi gọi createAsyncThunk thì nó sinh ra 1 ID unique
                 }
             )
             .addMatcher<RejectedAction | FulfilledAction>(
-                // sự kiện nào có cancel thì log state ra
                 action => action.type.endsWith('/rejected') || action.type.endsWith('/fulfilled'),
                 (state, action) => {
                     if (state.loading && state.currentRequestId === action.meta.requestId) {
