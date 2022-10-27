@@ -1,7 +1,6 @@
-import { createAsyncThunk, createSlice, current, nanoid, PayloadAction } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice, current, PayloadAction } from '@reduxjs/toolkit'
 import http from 'utils/http'
 import { Post } from '../../@types/blog.type'
-import { initialPostList } from '../../constants/blog'
 
 interface BlogState {
     postList: Post[]
@@ -52,7 +51,7 @@ const blogSlice = createSlice({
     name: 'blog',
     initialState,
     // map object
-    // reducers chỉ sử lý đồng bộ
+    // reducers chỉ sử lý action đồng bộ
     reducers: {
         startEditingPost: (state, action: PayloadAction<string>) => {
             const postId = action.payload
@@ -62,23 +61,9 @@ const blogSlice = createSlice({
 
         cancelEditingPost: state => {
             state.editingPost = null
-        },
-
-        finishEditingPost: (state, action: PayloadAction<Post>) => {
-            const postId = action.payload.id
-            state.postList.some((post, index) => {
-                if (post.id === postId) {
-                    state.postList[index] = action.payload
-                    return true
-                }
-
-                return false
-            })
-
-            state.editingPost = null
         }
     },
-    // builder callback
+    // builder callback sử lý action không đồng bộ => chuyên dùng cho TS
     extraReducers(builder) {
         builder
             .addCase(getPostList.fulfilled, (state, action) => {
@@ -119,7 +104,7 @@ const blogSlice = createSlice({
     }
 })
 
-export const { cancelEditingPost, startEditingPost } = blogSlice.actions
-const blogReducer = blogSlice.reducer
+export const { cancelEditingPost, startEditingPost } = blogSlice.actions // đưa ra các action tron reducer
+const blogReducer = blogSlice.reducer // đưa ra reducer
 
 export default blogReducer
