@@ -5,6 +5,10 @@ import { RootState } from '../../../../store'
 import { Post } from '../../../../@types/blog.type'
 import { deletePost, startEditingPost } from '../../blog.slice'
 
+// GỌI API trong useEffect()
+// Nếu gọi thành công thì dispatch action type: "blog/getPostListSuccess"
+// Nếu gọi thất bại thì dispatch action type: "blog/getPostListFailed"
+
 export default function PostList() {
     const postList = useSelector((state: RootState) => state.blog.postList)
     const dispatch = useDispatch()
