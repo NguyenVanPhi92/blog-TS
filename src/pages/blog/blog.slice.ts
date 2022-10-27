@@ -1,4 +1,4 @@
-import { AsyncThunk, createAsyncThunk, createSlice, current, PayloadAction } from '@reduxjs/toolkit'
+import { AsyncThunk, createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import http from 'utils/http'
 import { Post } from '../../@types/blog.type'
 
@@ -42,11 +42,20 @@ export const addPost = createAsyncThunk('blog/addPost', async (body: Omit<Post, 
 export const updatePost = createAsyncThunk(
     'blog/updatePost',
     async ({ postId, body }: { postId: string; body: Post }, thunkApi) => {
-        const response = await http.put<Post>(`posts/${postId}`, body, {
-            signal: thunkApi.signal // loại bỏ 2 lần call api của trick mode => chỉ còn 1 lần call api
-        })
+        try {
+            const response = await http.put<Post>(`posts/${postId}`, body, {
+                signal: thunkApi.signal // loại bỏ 2 lần call api của trick mode => chỉ còn 1 lần call api
+            })
 
-        return response.data
+            return response.data
+        } catch (error: any) {
+            // handle error
+            if (error.name === 'AxiosError' && error.response.status === 422) {
+                return thunkApi.rejectWithValue(error.response.data)
+            }
+
+            throw error
+        }
     }
 )
 export const deletePost = createAsyncThunk('blog/deletePost', async (postId: string, thunkApi) => {
@@ -108,25 +117,14 @@ const blogSlice = createSlice({
                     state.currentRequestId = action.meta.requestId // requestId khi gọi createAsyncThunk thì nó sinh ra 1 ID unique
                 }
             )
-            .addMatcher<RejectedAction>(
+            .addMatcher<RejectedAction | FulfilledAction>(
                 // sự kiện nào có cancel thì log state ra
-                action => action.type.endsWith('/rejected'),
+                action => action.type.endsWith('/rejected') || action.type.endsWith('/fulfilled'),
                 (state, action) => {
                     if (state.loading && state.currentRequestId === action.meta.requestId) {
                         state.loading = false
                         state.currentRequestId = undefined
                     }
-                }
-            )
-            .addMatcher<FulfilledAction>(
-                // sự kiện nào có cancel thì log state ra
-                action => action.type.endsWith('/fulfilled'),
-                (state, action) => {
-                    if (state.loading && state.currentRequestId === action.meta.requestId) {
-                        state.loading = false
-                        state.currentRequestId = undefined
-                    }
-                    state.loading = false
                 }
             )
         // trường hợp không nhảy vào các action ở trên thì nhảy vào default case

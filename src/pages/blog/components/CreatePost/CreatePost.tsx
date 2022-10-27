@@ -1,3 +1,4 @@
+import { unwrapResult } from '@reduxjs/toolkit'
 import React, { Fragment, useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Post } from '../../../../@types/blog.type'
@@ -13,11 +14,15 @@ const initialState: Post = {
     title: ''
 }
 
+interface ErrorForm {
+    publishDate: string
+}
+
 export default function CreatePost() {
     const dispatch = useAppDispatch()
     const [formData, setFormData] = useState<Post>(initialState)
+    const [errorForm, setErrorForm] = useState<null | ErrorForm>(null)
     const editingPost = useSelector((state: RootState) => state.blog.editingPost)
-    const loading = useSelector((state: RootState) => state.blog.loading)
 
     // nếu có editing post thì lấy ra editing post còn không thì dùng initialState => đưa vào formData
     useEffect(() => {
@@ -25,7 +30,7 @@ export default function CreatePost() {
     }, [editingPost])
 
     //handle
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
 
         // edit post
@@ -35,21 +40,22 @@ export default function CreatePost() {
                     postId: editingPost.id,
                     body: formData
                 })
+            )
                 // thông thường dispatch asyncThunk thì nó sẽ đóng gói
                 // unwrap -> mở gói
-            )
                 .unwrap()
                 .then(res => {
-                    console.log(res)
+                    setFormData(initialState)
+                    if (errorForm) setErrorForm(null)
                 })
                 .catch(error => {
-                    console.log(error)
+                    setErrorForm(error.error)
                 })
         } else {
-            // create post
-            dispatch(addPost(formData))
+            // create post, khi dùng với asyncThunk thì phài dùng kèm unwrap or unwrapResult
+            await dispatch(addPost(formData)).unwrap() // dùng unwrap -> để trả về response data
+            // const result = unwrapResult(res) //dùng unwrapResult để tra về response data
         }
-        setFormData(initialState)
     }
 
     const handleCancelEditingPost = () => {
@@ -111,19 +117,30 @@ export default function CreatePost() {
             <div className='mb-6'>
                 <label
                     htmlFor='publishDate'
-                    className='mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300'
+                    className={`mb-2 block text-sm font-medium  dark:text-gray-300 ${
+                        errorForm?.publishDate ? 'text-red-700' : 'text-gray-900'
+                    }`}
                 >
                     Publish Date
                 </label>
                 <input
                     type='datetime-local'
                     id='publishDate'
-                    className='block w-56 rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-blue-500'
+                    className={`block h-10 w-56 rounded-lg border p-1 focus:outline-none ${
+                        errorForm?.publishDate
+                            ? 'border-red-500 bg-red-50 text-red-700 placeholder-red-700 focus:border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500  focus:ring-blue-500'
+                    }`}
                     placeholder='Title'
                     required
                     value={formData.publishDate}
                     onChange={event => setFormData(prev => ({ ...prev, publishDate: event.target.value }))}
                 />
+                {errorForm?.publishDate && (
+                    <p className='mt-2 text-sm text-gray-600'>
+                        <span className='form-medium text-red-700'>Lỗi! {errorForm.publishDate}</span>
+                    </p>
+                )}
             </div>
             <div className='mb-6 flex items-center'>
                 <input
