@@ -1,9 +1,9 @@
-import React from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import PostItem from '../PostItem/index'
-import { RootState } from '../../../../store'
+import { useEffect } from 'react'
+import { useSelector } from 'react-redux'
 import { Post } from '../../../../@types/blog.type'
-import { deletePost, startEditingPost } from '../../blog.slice'
+import { RootState, useAppDispatch } from '../../../../store'
+import { getPostList, startEditingPost, deletePost } from '../../blog.slice'
+import PostItem from '../PostItem/index'
 
 // GỌI API trong useEffect()
 // Nếu gọi thành công thì dispatch action type: "blog/getPostListSuccess"
@@ -11,7 +11,14 @@ import { deletePost, startEditingPost } from '../../blog.slice'
 
 export default function PostList() {
     const postList = useSelector((state: RootState) => state.blog.postList)
-    const dispatch = useDispatch()
+    const dispatch = useAppDispatch()
+
+    useEffect(() => {
+        const promise = dispatch(getPostList())
+        return () => {
+            promise.abort()
+        }
+    }, [dispatch])
 
     // handle
     const handleDelete = (postId: string) => {

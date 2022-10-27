@@ -1,8 +1,8 @@
-import React, { useState, useEffect, Fragment } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import React, { Fragment, useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { Post } from '../../../../@types/blog.type'
-import { addPost, cancelEditingPost, finishEditingPost } from '../../blog.slice'
-import { RootState } from '../../../../store'
+import { RootState, useAppDispatch } from '../../../../store'
+import { addPost, cancelEditingPost, updatePost } from '../../blog.slice'
 
 const initialState: Post = {
     id: '',
@@ -14,7 +14,7 @@ const initialState: Post = {
 }
 
 export default function CreatePost() {
-    const dispatch = useDispatch()
+    const dispatch = useAppDispatch()
     const [formData, setFormData] = useState<Post>(initialState)
     const editingPost = useSelector((state: RootState) => state.blog.editingPost)
 
@@ -29,11 +29,15 @@ export default function CreatePost() {
 
         // edit post
         if (editingPost) {
-            dispatch(finishEditingPost(formData))
+            dispatch(
+                updatePost({
+                    postId: editingPost.id,
+                    body: formData
+                })
+            )
         } else {
             // create post
-            const formDataWithId = { ...formData, id: new Date().toISOString() }
-            dispatch(addPost(formDataWithId))
+            dispatch(addPost(formData))
         }
         setFormData(initialState)
     }
